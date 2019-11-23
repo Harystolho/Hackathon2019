@@ -12,6 +12,8 @@ class AnagramSolver(private val wordRepository: WordRepository) {
 
         verifyPhrase(phrase)
 
+
+
         return listOf(phrase)
     }
 
