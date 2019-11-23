@@ -2,7 +2,7 @@ package com.harystolho.hackathon.data
 
 import java.io.BufferedReader
 import java.io.InputStreamReader
-import kotlin.streams.toList
+import java.util.stream.Collectors
 
 class WordRepositoryImpl : WordRepository {
 
@@ -14,14 +14,14 @@ class WordRepositoryImpl : WordRepository {
         val bufferedReader = BufferedReader(reader)
 
         bufferedReader.use { br ->
-            lines = br.lines().toList()
+            lines = br.lines().collect(Collectors.toList())
         }
 
         return lines
     }
 
     companion object {
-        private const val FILE_NAME = "palavras.txt"
+        private const val FILE_NAME = "/palavras.txt"
     }
 
 }
