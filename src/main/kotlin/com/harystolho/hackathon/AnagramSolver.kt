@@ -23,11 +23,13 @@ class AnagramSolver(private val wordRepository: WordRepository) {
         val possibleWords = removeInvalidWords(phraseToProcess, validWords)
         logger.info { "${possibleWords.size} possible words" }
 
-        // remove words that have the same char more than once and phrase has only once
+        val noDuplicateChars = removeDuplicateChars(phraseToProcess, possibleWords)
+        logger.info { "${noDuplicateChars.size} possible words" }
 
+        val result = mutableListOf<String>()
 
-
-        return possibleWords
+        return noDuplicateChars
+        //return emptyList()
     }
 
     private fun removeInvalidWords(phrase: String, validWords: List<String>): List<String> {
@@ -42,8 +44,20 @@ class AnagramSolver(private val wordRepository: WordRepository) {
         }
     }
 
+    private fun removeDuplicateChars(phrase: String, validWords: List<String>): List<String> {
+        return validWords.filter { word ->
+            val equalChars = phrase.filter { word.contains(it) }
+
+            if (equalChars.length < word.length) return@filter false
+
+            true
+        }
+    }
+
     private fun formatPhrase(phrase: String): String {
-        return phrase.replace(" ", "").toUpperCase()
+        return phrase
+                .replace(" ", "")
+                .toUpperCase()
     }
 
     /**

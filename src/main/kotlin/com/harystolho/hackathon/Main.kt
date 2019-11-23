@@ -35,5 +35,4 @@ class Main {
 fun main() {
     Main().run()
 }
-
 // TODO handle exceptions
