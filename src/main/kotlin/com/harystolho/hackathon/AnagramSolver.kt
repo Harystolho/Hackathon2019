@@ -26,9 +26,20 @@ class AnagramSolver(private val wordRepository: WordRepository) {
         val noDuplicateChars = removeDuplicateChars(phraseToProcess, possibleWords)
         logger.info { "${noDuplicateChars.size} possible words" }
 
+        val orderedWords = noDuplicateChars.sortedWith(Comparator { a, b ->
+            if(a.length == b.length) return@Comparator 0
+            if (a.length < b.length) -1 else 1
+        }).toMutableList() // Improve this
+
         val result = mutableListOf<String>()
 
-        return noDuplicateChars
+        noDuplicateChars.forEachIndexed { idx, word ->
+            buildAnagram(phraseToProcess, word, orderedWords, idx, mutableListOf(word), result)
+        }
+
+        logger.info { "${result.size} possible words" }
+
+        return result
         //return emptyList()
     }
 
@@ -51,6 +62,32 @@ class AnagramSolver(private val wordRepository: WordRepository) {
             if (equalChars.length < word.length) return@filter false
 
             true
+        }
+    }
+
+    private fun buildAnagram(phrase: String, word: String, remainingWords: MutableList<String>, position: Int, builtSoFar: MutableList<String>, result: MutableList<String>) {
+        if (position >= remainingWords.size - 1) return
+
+        val builtSoFarLength = builtSoFar.sumBy { it.length }
+
+        if (builtSoFarLength >= phrase.length) {
+            val possibleResult = builtSoFar.flatMap { it.map { char -> char } }.sorted().joinToString(separator = "")
+            val actualResult = phrase.map { it }.sorted().joinToString(separator = "")
+
+            if (possibleResult == actualResult) {
+                builtSoFar.sortWith(Comparator { a, b -> a.compareTo(b) })
+                result.add(builtSoFar.joinToString(separator = " "))
+                return
+            }
+        }
+
+        for (i in position until remainingWords.size) { // TODO consider moving .length outside
+            val otherWord = remainingWords[i]
+
+            if (builtSoFarLength + otherWord.length <= phrase.length) {
+                val clone = builtSoFar.toMutableList().apply { add(otherWord) }
+                buildAnagram(phrase, otherWord, remainingWords, i, clone, result)
+            }
         }
     }
 

@@ -12,13 +12,16 @@ class Main {
 
         val solver = AnagramSolver(wordRepository)
 
+        var phrase = ""
+
         try {
-            val phrase = readPhraseFromConsole()
-            val anagrams = solver.findAnagrams(phrase)
-            anagrams.forEach { println(it) }
+            phrase = readPhraseFromConsole()
         } catch (e: IllegalArgumentException) {
             println("A palavra digitada nao é aceita por este programa")
         }
+
+        val anagrams = solver.findAnagrams(phrase)
+        anagrams.forEach { println(it) }
     }
 
     private fun initDependencies() {
