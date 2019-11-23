@@ -2,10 +2,13 @@ package com.harystolho.hackathon
 
 import com.harystolho.hackathon.data.WordRepository
 import mu.KotlinLogging
+import kotlin.Comparator
 
 private val logger = KotlinLogging.logger { }
 
 class AnagramSolver(private val wordRepository: WordRepository) {
+
+    //private lateinit var processedPhrase : String
 
     /**
      * @throws IllegalArgumentException if the given [phrase] is not accepted by this solver
@@ -29,18 +32,17 @@ class AnagramSolver(private val wordRepository: WordRepository) {
         val orderedWords = noDuplicateChars.sortedWith(Comparator { a, b ->
             if(a.length == b.length) return@Comparator 0
             if (a.length < b.length) -1 else 1
-        }).toMutableList() // Improve this
+        })
 
         val result = mutableListOf<String>()
 
         noDuplicateChars.forEachIndexed { idx, word ->
-            buildAnagram(phraseToProcess, word, orderedWords, idx, mutableListOf(word), result)
+            buildAnagram(phraseToProcess, orderedWords, idx, mutableListOf(word), result)
         }
 
         logger.info { "${result.size} possible words" }
 
         return result
-        //return emptyList()
     }
 
     private fun removeInvalidWords(phrase: String, validWords: List<String>): List<String> {
@@ -65,7 +67,7 @@ class AnagramSolver(private val wordRepository: WordRepository) {
         }
     }
 
-    private fun buildAnagram(phrase: String, word: String, remainingWords: MutableList<String>, position: Int, builtSoFar: MutableList<String>, result: MutableList<String>) {
+    private fun buildAnagram(phrase: String, remainingWords: List<String>, position: Int, builtSoFar: MutableList<String>, result: MutableList<String>) {
         if (position >= remainingWords.size - 1) return
 
         val builtSoFarLength = builtSoFar.sumBy { it.length }
@@ -86,7 +88,9 @@ class AnagramSolver(private val wordRepository: WordRepository) {
 
             if (builtSoFarLength + otherWord.length <= phrase.length) {
                 val clone = builtSoFar.toMutableList().apply { add(otherWord) }
-                buildAnagram(phrase, otherWord, remainingWords, i, clone, result)
+                buildAnagram(phrase, remainingWords, i, clone, result)
+            } else {
+                break
             }
         }
     }
