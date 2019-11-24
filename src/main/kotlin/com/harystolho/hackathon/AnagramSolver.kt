@@ -153,12 +153,10 @@ private class AnagramBuilder(phrase: String) {
             // The [dictionary] is a list ordered by word length, if adding [nextWord.length] to
             // [builtSoFarLength] results in a number greater than [phraseLength], all words
             // after [nextWord] will also result in greater number
-            if (builtSoFarLength + nextWord.length <= phraseLength) {
-                val clone = builtSoFar.toMutableList().apply { add(nextWord) }
-                build(clone, possibleWords)
-            } else {
-                break
-            }
+            if (builtSoFarLength + nextWord.length > phraseLength) break
+
+            val clone = builtSoFar.toMutableList().apply { add(nextWord) }
+            build(clone, possibleWords)
         }
     }
 
