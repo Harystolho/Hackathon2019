@@ -125,8 +125,8 @@ private class AnagramBuilder(phrase: String) {
     val result: MutableSet<String> = Collections.synchronizedSet(TreeSet<String>())
 
     private val actualResult = phrase.map { char -> char }.sorted().joinToString(separator = "")
-    private val phraseLength = phrase.length
     private val phraseCharCount = phrase.groupBy { it }.entries.associate { it.key to it.value.size }
+    private val phraseLength = phrase.length
 
     fun build(builtSoFar: MutableList<String>, dictionary: List<String>) {
         val builtSoFarString = builtSoFar.joinToString(separator = "")
@@ -148,7 +148,7 @@ private class AnagramBuilder(phrase: String) {
         for (i in possibleWords.indices) {
             val nextWord = possibleWords[i]
 
-            if(builtSoFar.contains(nextWord)) continue
+            if (builtSoFar.contains(nextWord)) continue
 
             // The [dictionary] is a list ordered by word length, if adding [nextWord.length] to
             // [builtSoFarLength] results in a number greater than [phraseLength], all words
@@ -182,10 +182,14 @@ private class AnagramBuilder(phrase: String) {
      * letters but 'e' is not because 'vermelho' has 2 'e'
      */
     private fun removeInvalidWords(dictionary: List<String>, builtSoFarString: String): List<String> {
+        val builtSoFarCharCount = builtSoFarString.groupBy { it }.entries
+                .associate { it.key to it.value.size }
+
         return dictionary.filter { word ->
             for (char in word) {
                 if (builtSoFarString.contains(char)) {
-                    if((phraseCharCount[char] ?: 0) - 1 < word.count { it == char }) return@filter false
+                    if ((phraseCharCount[char]
+                                    ?: 0) - (builtSoFarCharCount[char] ?: 0) < word.count { it == char }) return@filter false
                 }
             }
 
