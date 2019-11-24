@@ -15,8 +15,8 @@ class AnagramSolver(private val wordRepository: WordRepository) {
     /**
      * @throws IllegalArgumentException if the given [phrase] is not accepted by this solver
      */
-    fun findAnagrams(phrase: String): List<String> {
-        if (phrase.isEmpty()) return emptyList()
+    fun findAnagrams(phrase: String): Set<String> {
+        if (phrase.isEmpty()) return emptySet()
 
         val phraseToProcess = formatPhrase(phrase)
 
@@ -81,13 +81,13 @@ class AnagramSolver(private val wordRepository: WordRepository) {
     /**
      * Executes [AnagramBuilder] using concurrency to improve the time it takes to find all anagrams
      */
-    private fun runAnagramBuilder(phrase: String, orderedWords: List<String>): List<String> {
-        val anagramBuilder = AnagramBuilder(phrase, orderedWords)
+    private fun runAnagramBuilder(phrase: String, orderedWords: List<String>): Set<String> {
+        val anagramBuilder = AnagramBuilder(phrase)
 
         runBlocking {
-            withContext(Dispatchers.Default){
-                orderedWords.forEachIndexed{ idx, word ->
-                    launch { anagramBuilder.build(idx, mutableListOf(word)) }
+            withContext(Dispatchers.Default) {
+                orderedWords.forEach { word ->
+                    launch { anagramBuilder.build(mutableListOf(word), orderedWords) }
                 }
             }
         }
@@ -120,20 +120,20 @@ class AnagramSolver(private val wordRepository: WordRepository) {
 /**
  * This class is Thread safe
  */
-private class AnagramBuilder(phrase: String, private val dictionary: List<String>) {
+private class AnagramBuilder(phrase: String) {
 
-    val result: MutableList<String> = Collections.synchronizedList(mutableListOf<String>())
+    val result: MutableSet<String> = Collections.synchronizedSet(TreeSet<String>())
 
     private val actualResult = phrase.map { char -> char }.sorted().joinToString(separator = "")
     private val phraseLength = phrase.length
     private val phraseCharCount = phrase.groupBy { it }.entries.associate { it.key to it.value.size }
-    private val dictionarySize = dictionary.size
 
-    fun build(position: Int, builtSoFar: MutableList<String>) {
-        val builtSoFarLength = builtSoFar.sumBy { it.length }
+    fun build(builtSoFar: MutableList<String>, dictionary: List<String>) {
+        val builtSoFarString = builtSoFar.joinToString(separator = "")
+        val builtSoFarLength = builtSoFarString.length
 
         if (builtSoFarLength >= phraseLength) {
-            val possibleResult = builtSoFar.flatMap { it.map { char -> char } }.sorted().joinToString(separator = "")
+            val possibleResult = builtSoFarString.map { char -> char }.sorted().joinToString(separator = "")
 
             if (possibleResult == actualResult) {
                 builtSoFar.sortWith(Comparator { a, b -> a.compareTo(b) })
@@ -143,8 +143,10 @@ private class AnagramBuilder(phrase: String, private val dictionary: List<String
             return
         }
 
-        for (i in position until dictionarySize) {
-            val nextWord = dictionary[i]
+        val possibleWords = removeInvalidWords(dictionary, builtSoFarString)
+
+        for (i in possibleWords.indices) {
+            val nextWord = possibleWords[i]
 
             // The [dictionary] is a list ordered by word length, if adding [nextWord.length] to
             // [builtSoFarLength] results in a number greater than [phraseLength], all words
@@ -165,10 +167,27 @@ private class AnagramBuilder(phrase: String, private val dictionary: List<String
                 }
 
                 if (!skip)
-                    build(i + 1, clone)
+                    build(clone, possibleWords)
             } else {
                 break
             }
+        }
+    }
+
+    /**
+     * Remove words that can't be joined to build [phrase]. If the phrase is 'vermelho' and [builtSoFarString]
+     * is 'elm', all words that contain 'l' or 'm' are removed because 'vermelho' has only 1 of these
+     * letters but 'e' is not because 'vermelho' has 2 'e'
+     */
+    private fun removeInvalidWords(dictionary: List<String>, builtSoFarString: String): List<String> {
+        return dictionary.filter { word ->
+            for (char in word) {
+                if (builtSoFarString.contains(char)) {
+                    return@filter (phraseCharCount[char] ?: 0) - 1 >= word.count { it == char }
+                }
+            }
+
+            true
         }
     }
 
