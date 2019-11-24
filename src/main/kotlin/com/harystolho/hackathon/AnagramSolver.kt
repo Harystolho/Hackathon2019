@@ -39,19 +39,7 @@ class AnagramSolver(private val wordRepository: WordRepository) {
             if (a.length < b.length) -1 else 1
         })
 
-        orderedWords.forEach { println(it) }
-
-        val anagramBuilder = AnagramBuilder(phraseToProcess, orderedWords)
-
-        val futures = noDuplicateChars.mapIndexed { idx, word ->
-            threadPool.submit { anagramBuilder.build(idx, mutableListOf(word)) }
-        }
-
-        for (f in futures) f.get() // Await for tasks to finish
-
-        threadPool.shutdown()
-
-        val result = anagramBuilder.result
+        val result = runAnagramBuilder(phraseToProcess, orderedWords)
 
         logger.info { "${result.size} possible words" }
 
@@ -84,6 +72,20 @@ class AnagramSolver(private val wordRepository: WordRepository) {
         }
     }
 
+    private fun runAnagramBuilder(phrase: String, orderedWords: List<String>): List<String> {
+        val anagramBuilder = AnagramBuilder(phrase, orderedWords)
+
+        val futures = orderedWords.mapIndexed { idx, word ->
+            threadPool.submit { anagramBuilder.build(idx, mutableListOf(word)) }
+        }
+
+        for (f in futures) f.get() // Await for tasks to finish
+
+        threadPool.shutdown()
+
+        return anagramBuilder.result
+    }
+
     private fun formatPhrase(phrase: String): String {
         return phrase
                 .replace(" ", "")
@@ -112,11 +114,12 @@ private class AnagramBuilder(private val phrase: String, private val dictionary:
 
     private val actualResult = phrase.map { char -> char }.sorted().joinToString(separator = "")
     private val phraseLength = phrase.length
+    private val dictionarySize = dictionary.size
 
     fun build(position: Int, builtSoFar: MutableList<String>) {
         val builtSoFarLength = builtSoFar.sumBy { it.length }
 
-        if (builtSoFarLength >= phrase.length) {
+        if (builtSoFarLength >= phraseLength) {
             val possibleResult = builtSoFar.flatMap { it.map { char -> char } }.sorted().joinToString(separator = "")
             // println("possible: $possibleResult")
 
@@ -129,7 +132,7 @@ private class AnagramBuilder(private val phrase: String, private val dictionary:
             return
         }
 
-        for (i in position until dictionary.size) {
+        for (i in position until dictionarySize) {
             val otherWord = dictionary[i]
 
             if (builtSoFarLength + otherWord.length <= phraseLength) {
