@@ -155,21 +155,7 @@ private class AnagramBuilder(phrase: String) {
             // after [nextWord] will also result in greater number
             if (builtSoFarLength + nextWord.length <= phraseLength) {
                 val clone = builtSoFar.toMutableList().apply { add(nextWord) }
-
-                val builtSoFarCharCount = clone.joinToString(separator = "")
-                        .groupBy { char -> char }.entries.associate { it.key to it.value.size }
-
-                var skip = false
-
-                for (entry in builtSoFarCharCount.entries) {
-                    if (entry.value > phraseCharCount[entry.key] ?: 0) {
-                        skip = true
-                        break
-                    }
-                }
-
-                if (!skip)
-                    build(clone, possibleWords)
+                build(clone, possibleWords)
             } else {
                 break
             }
@@ -188,8 +174,8 @@ private class AnagramBuilder(phrase: String) {
         return dictionary.filter { word ->
             for (char in word) {
                 if (builtSoFarString.contains(char)) {
-                    if ((phraseCharCount[char]
-                                    ?: 0) - (builtSoFarCharCount[char] ?: 0) < word.count { it == char }) return@filter false
+                    if ((phraseCharCount[char] ?: 0) - (builtSoFarCharCount[char]
+                                    ?: 0) < word.count { it == char }) return@filter false
                 }
             }
 
