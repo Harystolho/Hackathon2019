@@ -31,13 +31,7 @@ class AnagramSolver(private val wordRepository: WordRepository) {
         val noDuplicateChars = removeDuplicateChars(phraseToProcess, possibleWords)
         logger.info { "${noDuplicateChars.size} possible words" }
 
-        val orderedWords = noDuplicateChars.sortedWith(Comparator { a, b ->
-            if (a.length == b.length) return@Comparator 0
-            if (a.length < b.length) -1 else 1
-        })
-
-        val result = runAnagramBuilder(phraseToProcess, orderedWords)
-
+        val result = runAnagramBuilder(phraseToProcess, noDuplicateChars)
         logger.info { "${result.size} possible words" }
 
         return result
@@ -66,12 +60,11 @@ class AnagramSolver(private val wordRepository: WordRepository) {
      */
     private fun removeDuplicateChars(phrase: String, validWords: List<String>): List<String> {
         return validWords.filter { word ->
+            // if the phrase is 'helo', the word 'hello' would be removed in here
             val equalChars = phrase.filter { word.contains(it) }
-
             if (equalChars.length < word.length) return@filter false
 
             val phraseChars = phrase.map { char -> char }.toMutableList()
-
             word.forEach { char -> if (!phraseChars.remove(char)) return@filter false }
 
             true
