@@ -44,6 +44,10 @@ class AnagramSolver(private val wordRepository: WordRepository) {
         return result
     }
 
+    /**
+     * Removes words that have characters not present in [phrase]. If the phrase is 'car', the word
+     * 'house' is removed because 'car' doesn't contain 'h'
+     */
     private fun removeInvalidWords(phrase: String, validWords: List<String>): List<String> {
         val distinctPhrase = phrase.toCharArray().distinct() // Keep only distinct chars
 
@@ -56,6 +60,11 @@ class AnagramSolver(private val wordRepository: WordRepository) {
         }
     }
 
+    /**
+     * Removes words that have the same chars as [phrase] but in greater amount. If the phrase is
+     * 'maracuja azedo', the word 'armour' is removed because even though 'maracuja azedo' has all
+     * chars 'armour' has, 'armour' has 2 'r' and 'maracuja azedo' has only 1
+     */
     private fun removeDuplicateChars(phrase: String, validWords: List<String>): List<String> {
         return validWords.filter { word ->
             val equalChars = phrase.filter { word.contains(it) }
@@ -70,6 +79,9 @@ class AnagramSolver(private val wordRepository: WordRepository) {
         }
     }
 
+    /**
+     * Execute [AnagramBuilder] using concurrency to improve the time it takes to find all anagrams
+     */
     private fun runAnagramBuilder(phrase: String, orderedWords: List<String>): List<String> {
         val anagramBuilder = AnagramBuilder(phrase, orderedWords)
 
@@ -106,7 +118,10 @@ class AnagramSolver(private val wordRepository: WordRepository) {
 
 }
 
-private class AnagramBuilder(private val phrase: String, private val dictionary: List<String>) {
+/**
+ * This class is Thread safe
+ */
+private class AnagramBuilder(phrase: String, private val dictionary: List<String>) {
 
     val result = Collections.synchronizedList(mutableListOf<String>())
 

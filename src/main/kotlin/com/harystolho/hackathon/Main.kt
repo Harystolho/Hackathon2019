@@ -15,20 +15,18 @@ class Main {
 
         val solver = AnagramSolver(wordRepository)
 
-        var phrase = ""
+        val phrase = readPhraseFromConsole()
+
+        val startTime = System.currentTimeMillis()
 
         try {
-            phrase = readPhraseFromConsole()
+            val anagrams = solver.findAnagrams(phrase)
+            anagrams.forEach { println(it) }
         } catch (e: IllegalArgumentException) {
             println("A palavra digitada nao é aceita por este programa")
         }
 
-        val startTime = System.currentTimeMillis()
-
-        val anagrams = solver.findAnagrams(phrase)
-        anagrams.forEach { println(it) }
-
-        logger.info { "End: ${(System.currentTimeMillis() - startTime) / 1000.0}s" }
+        logger.info { "Elapsed Time: ${(System.currentTimeMillis() - startTime) / 1000.0}s" }
     }
 
     private fun initDependencies() {
@@ -45,4 +43,3 @@ class Main {
 fun main() {
     Main().run()
 }
-// TODO handle exceptions
