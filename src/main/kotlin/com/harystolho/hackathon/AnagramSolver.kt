@@ -39,6 +39,8 @@ class AnagramSolver(private val wordRepository: WordRepository) {
             if (a.length < b.length) -1 else 1
         })
 
+        orderedWords.forEach { println(it) }
+
         val anagramBuilder = AnagramBuilder(phraseToProcess, orderedWords)
 
         val futures = noDuplicateChars.mapIndexed { idx, word ->
@@ -73,6 +75,10 @@ class AnagramSolver(private val wordRepository: WordRepository) {
             val equalChars = phrase.filter { word.contains(it) }
 
             if (equalChars.length < word.length) return@filter false
+
+            val phraseChars = phrase.map { char -> char }.toMutableList()
+
+            word.forEach { char -> if (!phraseChars.remove(char)) return@filter false }
 
             true
         }
@@ -112,8 +118,10 @@ private class AnagramBuilder(private val phrase: String, private val dictionary:
 
         if (builtSoFarLength >= phrase.length) {
             val possibleResult = builtSoFar.flatMap { it.map { char -> char } }.sorted().joinToString(separator = "")
+            // println("possible: $possibleResult")
 
             if (possibleResult == actualResult) {
+                //     println("actual: $actualResult")
                 builtSoFar.sortWith(Comparator { a, b -> a.compareTo(b) })
                 result.add(builtSoFar.joinToString(separator = " "))
             }
