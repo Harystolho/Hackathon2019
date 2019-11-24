@@ -1,9 +1,7 @@
 package com.harystolho.hackathon
 
 import com.harystolho.hackathon.data.WordRepository
-import com.sun.corba.se.impl.orbutil.closure.Future
 import mu.KotlinLogging
-import java.sql.Time
 import java.util.*
 import java.util.concurrent.*
 import kotlin.Comparator
@@ -114,6 +112,7 @@ private class AnagramBuilder(private val phrase: String, private val dictionary:
 
     private val actualResult = phrase.map { char -> char }.sorted().joinToString(separator = "")
     private val phraseLength = phrase.length
+    private val phraseCharCount = phrase.groupBy { it }.entries.associate { it.key to it.value.size }
     private val dictionarySize = dictionary.size
 
     fun build(position: Int, builtSoFar: MutableList<String>) {
@@ -121,10 +120,8 @@ private class AnagramBuilder(private val phrase: String, private val dictionary:
 
         if (builtSoFarLength >= phraseLength) {
             val possibleResult = builtSoFar.flatMap { it.map { char -> char } }.sorted().joinToString(separator = "")
-            // println("possible: $possibleResult")
 
             if (possibleResult == actualResult) {
-                //     println("actual: $actualResult")
                 builtSoFar.sortWith(Comparator { a, b -> a.compareTo(b) })
                 result.add(builtSoFar.joinToString(separator = " "))
             }
@@ -133,11 +130,28 @@ private class AnagramBuilder(private val phrase: String, private val dictionary:
         }
 
         for (i in position until dictionarySize) {
-            val otherWord = dictionary[i]
+            val nextWord = dictionary[i]
 
-            if (builtSoFarLength + otherWord.length <= phraseLength) {
-                val clone = builtSoFar.toMutableList().apply { add(otherWord) }
-                build(i + 1, clone)
+            // The [dictionary] is a list ordered by word length, if adding [nextWord.length] to
+            // [builtSoFarLength] results in a number greater than [phraseLength], all words
+            // after [nextWord] will also result in greater number
+            if (builtSoFarLength + nextWord.length <= phraseLength) {
+                val clone = builtSoFar.toMutableList().apply { add(nextWord) }
+
+                val builtSoFarCharCount = clone.joinToString(separator = "")
+                        .groupBy { char -> char }.entries.associate { it.key to it.value.size }
+
+                var skip = false
+
+                for (entry in builtSoFarCharCount.entries) {
+                    if (entry.value > phraseCharCount[entry.key] ?: 0) {
+                        skip = true
+                        break
+                    }
+                }
+
+                if (!skip)
+                    build(i + 1, clone)
             } else {
                 break
             }
