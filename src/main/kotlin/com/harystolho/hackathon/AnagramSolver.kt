@@ -124,24 +124,11 @@ private class AnagramBuilder(phrase: String) {
 
     val result: MutableSet<String> = Collections.synchronizedSet(TreeSet<String>())
 
-    private val actualResult = phrase.map { char -> char }.sorted().joinToString(separator = "")
     private val phraseCharCount = phrase.groupBy { it }.entries.associate { it.key to it.value.size }
     private val phraseLength = phrase.length
 
     fun build(builtSoFar: MutableList<String>, dictionary: List<String>) {
         val builtSoFarString = builtSoFar.joinToString(separator = "")
-        val builtSoFarLength = builtSoFarString.length
-
-        if (builtSoFarLength >= phraseLength) {
-            val possibleResult = builtSoFarString.map { char -> char }.sorted().joinToString(separator = "")
-
-            if (possibleResult == actualResult) {
-                builtSoFar.sortWith(Comparator { a, b -> a.compareTo(b) })
-                result.add(builtSoFar.joinToString(separator = " "))
-            }
-
-            return
-        }
 
         val possibleWords = removeInvalidWords(dictionary, builtSoFarString)
 
@@ -150,12 +137,14 @@ private class AnagramBuilder(phrase: String) {
 
             if (builtSoFar.contains(nextWord)) continue
 
-            // The [dictionary] is a list ordered by word length, if adding [nextWord.length] to
-            // [builtSoFarLength] results in a number greater than [phraseLength], all words
-            // after [nextWord] will also result in greater number
-            if (builtSoFarLength + nextWord.length > phraseLength) break
-
             val clone = builtSoFar.toMutableList().apply { add(nextWord) }
+
+            if (clone.sumBy { it.length } >= phraseLength) {
+                clone.sortWith(Comparator { a, b -> a.compareTo(b) })
+                result.add(clone.joinToString(separator = " "))
+                continue
+            }
+
             build(clone, possibleWords)
         }
     }
@@ -168,15 +157,20 @@ private class AnagramBuilder(phrase: String) {
     private fun removeInvalidWords(dictionary: List<String>, builtSoFarString: String): List<String> {
         val builtSoFarCharCount = builtSoFarString.groupBy { it }.entries
                 .associate { it.key to it.value.size }
+        val builtSoFarLength = builtSoFarString.length
 
         return dictionary.filter { word ->
+            // The [dictionary] is a list ordered by word length, if adding [word.length] to
+            // [builtSoFarLength] results in a number greater than [phraseLength], all words
+            // after [nextWord] will also result in greater number
+            if (builtSoFarLength + word.length > phraseLength) return@filter false
+
             for (char in word) {
                 if (builtSoFarString.contains(char)) {
                     if ((phraseCharCount[char] ?: 0) - (builtSoFarCharCount[char]
                                     ?: 0) < word.count { it == char }) return@filter false
                 }
             }
-
             true
         }
     }
