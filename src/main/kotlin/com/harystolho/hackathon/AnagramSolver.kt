@@ -1,17 +1,16 @@
 package com.harystolho.hackathon
 
 import com.harystolho.hackathon.data.WordRepository
+import kotlinx.coroutines.*
 import mu.KotlinLogging
 import java.util.*
 import java.util.concurrent.*
 import kotlin.Comparator
+import kotlin.coroutines.coroutineContext
 
 private val logger = KotlinLogging.logger { }
 
 class AnagramSolver(private val wordRepository: WordRepository) {
-
-    //private lateinit var processedPhrase : String
-    private val threadPool by lazy { Executors.newFixedThreadPool(6) }
 
     /**
      * @throws IllegalArgumentException if the given [phrase] is not accepted by this solver
@@ -80,18 +79,18 @@ class AnagramSolver(private val wordRepository: WordRepository) {
     }
 
     /**
-     * Execute [AnagramBuilder] using concurrency to improve the time it takes to find all anagrams
+     * Executes [AnagramBuilder] using concurrency to improve the time it takes to find all anagrams
      */
     private fun runAnagramBuilder(phrase: String, orderedWords: List<String>): List<String> {
         val anagramBuilder = AnagramBuilder(phrase, orderedWords)
 
-        val futures = orderedWords.mapIndexed { idx, word ->
-            threadPool.submit { anagramBuilder.build(idx, mutableListOf(word)) }
+        runBlocking {
+            withContext(Dispatchers.Default){
+                orderedWords.forEachIndexed{ idx, word ->
+                    launch { anagramBuilder.build(idx, mutableListOf(word)) }
+                }
+            }
         }
-
-        for (f in futures) f.get() // Await for tasks to finish
-
-        threadPool.shutdown()
 
         return anagramBuilder.result
     }
@@ -123,7 +122,7 @@ class AnagramSolver(private val wordRepository: WordRepository) {
  */
 private class AnagramBuilder(phrase: String, private val dictionary: List<String>) {
 
-    val result = Collections.synchronizedList(mutableListOf<String>())
+    val result: MutableList<String> = Collections.synchronizedList(mutableListOf<String>())
 
     private val actualResult = phrase.map { char -> char }.sorted().joinToString(separator = "")
     private val phraseLength = phrase.length
