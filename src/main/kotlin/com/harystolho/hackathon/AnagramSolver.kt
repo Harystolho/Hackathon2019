@@ -95,28 +95,33 @@ private class AnagramBuilder(private val phrase: String, private val dictionary:
 
     val result = mutableListOf<String>()
 
-    fun build(position: Int, builtSoFar: MutableList<String>) {
-        if (position >= dictionary.size - 1) return
+    private val actualResult = phrase.map { char -> char }.sorted().joinToString(separator = "")
+    private val phraseLength = phrase.length
 
+    fun build(position: Int, builtSoFar: MutableList<String>) {
         val builtSoFarLength = builtSoFar.sumBy { it.length }
 
         if (builtSoFarLength >= phrase.length) {
             val possibleResult = builtSoFar.flatMap { it.map { char -> char } }.sorted().joinToString(separator = "")
-            val actualResult = phrase.map { it }.sorted().joinToString(separator = "")
+
+//            println("possible: $possibleResult")
 
             if (possibleResult == actualResult) {
+//                println("actual: $actualResult")
                 builtSoFar.sortWith(Comparator { a, b -> a.compareTo(b) })
                 result.add(builtSoFar.joinToString(separator = " "))
                 return
             }
+
+            return
         }
 
         for (i in position until dictionary.size) {
             val otherWord = dictionary[i]
 
-            if (builtSoFarLength + otherWord.length <= phrase.length) {
+            if (builtSoFarLength + otherWord.length <= phraseLength) {
                 val clone = builtSoFar.toMutableList().apply { add(otherWord) }
-                build(i, clone)
+                build(i + 1, clone)
             } else {
                 break
             }
