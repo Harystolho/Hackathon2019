@@ -1,7 +1,11 @@
 package com.harystolho.hackathon
 
 import com.harystolho.hackathon.data.WordRepository
+import com.sun.corba.se.impl.orbutil.closure.Future
 import mu.KotlinLogging
+import java.sql.Time
+import java.util.*
+import java.util.concurrent.*
 import kotlin.Comparator
 
 private val logger = KotlinLogging.logger { }
@@ -9,6 +13,7 @@ private val logger = KotlinLogging.logger { }
 class AnagramSolver(private val wordRepository: WordRepository) {
 
     //private lateinit var processedPhrase : String
+    private val threadPool by lazy { Executors.newFixedThreadPool(6) }
 
     /**
      * @throws IllegalArgumentException if the given [phrase] is not accepted by this solver
@@ -36,9 +41,13 @@ class AnagramSolver(private val wordRepository: WordRepository) {
 
         val anagramBuilder = AnagramBuilder(phraseToProcess, orderedWords)
 
-        noDuplicateChars.forEachIndexed { idx, word ->
-            anagramBuilder.build(idx, mutableListOf(word))
+        val futures = noDuplicateChars.mapIndexed { idx, word ->
+            threadPool.submit { anagramBuilder.build(idx, mutableListOf(word)) }
         }
+
+        for (f in futures) f.get() // Await for tasks to finish
+
+        threadPool.shutdown()
 
         val result = anagramBuilder.result
 
@@ -93,7 +102,7 @@ class AnagramSolver(private val wordRepository: WordRepository) {
 
 private class AnagramBuilder(private val phrase: String, private val dictionary: List<String>) {
 
-    val result = mutableListOf<String>()
+    val result = Collections.synchronizedList(mutableListOf<String>())
 
     private val actualResult = phrase.map { char -> char }.sorted().joinToString(separator = "")
     private val phraseLength = phrase.length
@@ -104,13 +113,9 @@ private class AnagramBuilder(private val phrase: String, private val dictionary:
         if (builtSoFarLength >= phrase.length) {
             val possibleResult = builtSoFar.flatMap { it.map { char -> char } }.sorted().joinToString(separator = "")
 
-//            println("possible: $possibleResult")
-
             if (possibleResult == actualResult) {
-//                println("actual: $actualResult")
                 builtSoFar.sortWith(Comparator { a, b -> a.compareTo(b) })
                 result.add(builtSoFar.joinToString(separator = " "))
-                return
             }
 
             return
