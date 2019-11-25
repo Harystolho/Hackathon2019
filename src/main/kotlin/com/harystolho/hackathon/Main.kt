@@ -39,7 +39,7 @@ class Main {
 
     private fun readPhraseFromConsole(): String {
         print("Digite uma frase: ")
-        return readLine() ?: "" // TODO read accentuated chars
+        return readLine() ?: ""
     }
 
 }

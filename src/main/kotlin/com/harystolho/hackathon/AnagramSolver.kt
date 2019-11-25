@@ -125,7 +125,7 @@ private class AnagramBuilder(phrase: String) {
 
         val possibleWords = removeInvalidWords(dictionary, builtSoFarString)
 
-        for (i in possibleWords.indices) {
+        for (i in (possibleWords.size - 1) downTo 0) {
             val nextWord = possibleWords[i]
 
             if (builtSoFar.contains(nextWord)) continue
@@ -153,9 +153,6 @@ private class AnagramBuilder(phrase: String) {
         val builtSoFarLength = builtSoFarString.length
 
         return dictionary.filter { word ->
-            // The [dictionary] is a list ordered by word length, if adding [word.length] to
-            // [builtSoFarLength] results in a number greater than [phraseLength], all words
-            // after [nextWord] will also result in greater number
             if (builtSoFarLength + word.length > phraseLength) return@filter false
 
             for (char in word) {
