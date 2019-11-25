@@ -98,9 +98,7 @@ class AnagramSolver(private val wordRepository: WordRepository) {
      * @throws IllegalArgumentException if the given [phrase] contains an invalid character
      */
     private fun verifyPhrase(phrase: String) {
-        val upperCasePhrase = phrase.toUpperCase()
-
-        val chars = upperCasePhrase.toByteArray()
+        val chars = phrase.toByteArray()
 
         chars.forEach { char ->
             // 'A' is 65 and 'Z' is 90 in the ASCII table
